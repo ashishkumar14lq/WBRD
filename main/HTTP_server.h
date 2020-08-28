@@ -18,13 +18,10 @@ static const char *TAGWS = "HTTP_server";
 
 static esp_err_t get_get_handler(httpd_req_t *req)
 {
-    /* Set some custom headers */
-    httpd_resp_set_hdr(req, "Custom-Header-1", "Custom-Value-1");
-    httpd_resp_set_hdr(req, "Custom-Header-2", "Custom-Value-2");
     char resp_str[20];
-
     int value = get_read();
     float power;
+
     if (status.gain == _50uw)
     	{
 			power = (float)value / 4095 * 50;
@@ -45,8 +42,6 @@ static esp_err_t set_get_handler(httpd_req_t *req)
     size_t buf_len;
     int resp = 10;
 
-    /* Read URL query string length and allocate memory for length + 1,
-     * extra byte for null termination */
     buf_len = httpd_req_get_url_query_len(req) + 1;
     if (buf_len > 1) {
         buf = malloc(buf_len);
@@ -54,7 +49,6 @@ static esp_err_t set_get_handler(httpd_req_t *req)
             ESP_LOGI(TAGWS, "Found URL query => %s", buf);
             char param[32];
 
-            /* Get value of expected key from query string */
             if (httpd_query_key_value(buf, "gain", param, sizeof(param)) == ESP_OK) {
             	resp = http_update(1, param);
             }
@@ -66,14 +60,6 @@ static esp_err_t set_get_handler(httpd_req_t *req)
         printf("ya sali, angle: %f\n", status.angle);
         free(buf);
     }
-
-    printf("set headers\n");
-    /* Set some custom headers */
-    httpd_resp_set_hdr(req, "Custom-Header-1", "Custom-Value-1");
-    httpd_resp_set_hdr(req, "Custom-Header-2", "Custom-Value-2");
-
-
-    printf("Genero respuesta\n");
 
     char resp_str[30];
     if(resp == 1)

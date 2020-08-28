@@ -8,8 +8,9 @@
 #ifndef MAIN_PROPLCD_H_
 #define MAIN_PROPLCD_H_
 
+//#include "delete-delay.h"
 #include "driver/gpio.h"
-#include "delay.h"
+#include "esp32/rom/ets_sys.h"
 
 static const char *TAG = "APP";
 
@@ -110,7 +111,7 @@ void lcd_init(void) {
 	_row_ofsets[0] = 0x00;
 	_row_ofsets[1] = 0x40;
 	*/
-	delay_us(50000);
+	ets_delay_us(50000);
 
 	// Now we pull both RS and R/W low to begin commands
 	gpio_set_level(LCD_RS, 0);
@@ -118,15 +119,15 @@ void lcd_init(void) {
 
 	// we start in 8bit mode, try to set 4 bit mode
 	write4bits(0x03);
-	delay_us(4500); // wait min 4.1ms
+	ets_delay_us(4500); // wait min 4.1ms
 
 	// second try
 	write4bits(0x03);
-	delay_us(4500); // wait min 4.1ms
+	ets_delay_us(4500); // wait min 4.1ms
 
 	// third go!
 	write4bits(0x03);
-	delay_us(150);
+	ets_delay_us(150);
 
 	// finally, set to 4-bit interface
 	write4bits(0x02);
@@ -137,19 +138,19 @@ void lcd_init(void) {
 
 	clear();
 
-	delay_ms(100);
+	ets_delay_us(100000);
 
 	_displaycontrol = LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF;
 	display();
 
-	delay_ms(100);
+	ets_delay_us(100000);
 
 	// Initialize to default text direction (for romance languages)
 	_displaymode = LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT;
 	// set the entry mode
 	command(LCD_ENTRYMODESET | _displaymode);
 
-	delay_ms(100);
+	ets_delay_us(100000);
 }
 
 
@@ -162,12 +163,12 @@ void display(void) {
 
 void clear(void) {
 	command(LCD_CLEARDISPLAY);  // clear display, set cursor position to zero
-	delay_us(3000);					// this command takes a long time!
+	ets_delay_us(3000);			// this command takes a long time!
 }
 
 void home(void) {
 	command(LCD_RETURNHOME);			// set cursor position to zero
-	delay_us(2000);  // this command takes a long time!
+	ets_delay_us(2000);					// this command takes a long time!
 }
 
 
@@ -194,7 +195,7 @@ void lcd_write_string(char* data)
     {
     	lcd_write(data[i]);
         i++;
-        delay_us(50);
+        ets_delay_us(50);
     }
 }
 
@@ -215,11 +216,11 @@ void send(unsigned value, unsigned mode) {
 
 void pulseEnable(void) {
 	gpio_set_level(LCD_E, 0);
-	delay_us(10);
+	ets_delay_us(10);
 	gpio_set_level(LCD_E, 1);
-	delay_us(10);					// enable pulse must be >450ns
+	ets_delay_us(10);					// enable pulse must be >450ns
 	gpio_set_level(LCD_E, 0);
-	delay_us(100);  				// commands need > 37us to settle
+	ets_delay_us(100);  				// commands need > 37us to settle
 }
 
 void write4bits(unsigned value) {

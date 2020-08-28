@@ -8,12 +8,11 @@
 #include "esp_log.h"
 #include "nvs.h"
 #include "nvs_flash.h"
-#include "esp_netif.h"	//#include <tcpip_adapter.h>
 #include "driver/gpio.h"
 #include <driver/adc.h>
 #include "stdio.h"
 #include "string.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 #include "lwip/err.h"
 #include "lwip/sys.h"
@@ -22,10 +21,7 @@
 
 #include "propLCD.h"
 
-//static const char *TAG = "APP";
-
-
-
+esp_err_t event_handler(void *ctx, system_event_t *event);
 
 /* Configurations */
 
@@ -61,6 +57,7 @@ typedef enum {
 	working,
 } mode;
 
+// This structure is used to save the complete status of the mechanical system
 typedef struct {
 	gain_type gain;
 	float step_size;
@@ -77,6 +74,7 @@ typedef struct {
 
 /* Global variables */
 
+// status has the complete status of the mechanical system
 system_status_type status = {
 		.gain = _5mw,
 		.step_size = default_step,
@@ -119,14 +117,14 @@ int http_update(int param, char* value){
 	}
 	else if (param == 2)
 	{
-
+		printf("\n\n");
 		float angle = strtof(value, NULL);				// Get angle from string
 		printf("angle: \n");
 		float new_step_dec = (angle * 17.77777778);		// Calculate final steps position
 
 
 
-		signed lower_limit = 0 - (signed)status.nstep_neg;
+		signed lower_limit = 0 - (signed)status.nstep_neg;		// Lower limit in number of steps with sign
 		printf("Angle: %f, steps future: %d. Range: %d - %d\n", angle, (int)new_step_dec, lower_limit, status.nstep_pos);
 
 		if (((signed int)new_step_dec >= lower_limit) && ((signed int)new_step_dec <= (signed int)status.nstep_pos))
@@ -153,7 +151,8 @@ int http_update(int param, char* value){
 					printf("Move anti-clockwise \n");
 					nsteps = abs(nsteps);
 					gpio_set_level(m_direction, 0); // Anti-clockwise
-					ets_delay_us(1);
+
+					ets_delay_us(1000000);
 					printf("Mode detector %d steps \n", nsteps);
 					detector_step(nsteps);
 					printf("Mode sample %d steps \n", 2*nsteps);
@@ -199,8 +198,14 @@ connection_data wifi_stat = {
 	.status = disconnected,
 };
 
+esp_err_t event_handler(void *ctx, system_event_t *event)
+{
+    return ESP_OK;
+}
+
+
 /* WiFi - FreeRTOS event group to signal when we are connected*/
-static EventGroupHandle_t s_wifi_event_group;
+//static EventGroupHandle_t s_wifi_event_group;
 
 /* The event group allows multiple bits for each event, but we only care about two events:
  * - we are connected to the AP with an IP
@@ -228,9 +233,9 @@ static void wifi_softap_event_handler(void* arg, esp_event_base_t event_base,
 
 void wifi_init_softap(void)
 {
-	s_wifi_event_group = xEventGroupCreate();
-
-	esp_netif_create_default_wifi_ap();
+	nvs_flash_init();
+	tcpip_adapter_init();
+	ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
 
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 	ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -255,11 +260,6 @@ void wifi_init_softap(void)
 }
 
 void wifi_connect(void){
-
-	ESP_ERROR_CHECK(esp_event_loop_create_default());
-	ESP_ERROR_CHECK(esp_netif_init());
-
-
 	ESP_LOGI(TAG, "ESP_WIFI_MODE_AP");
 	wifi_init_softap();
 }
@@ -434,11 +434,13 @@ int get_read(void)
 	return answer;
 }
 
+// Write the first line of the display
 void disp_line1(char* text){
 	lcd_goto(1,1);
 	lcd_write_string(text);
 }
 
+// Write the second line of the display
 void disp_line2(char* text){
 	lcd_goto(2,1);
 	lcd_write_string(text);
@@ -457,6 +459,7 @@ int are_equal(system_status_type A, system_status_type B)
 	return equal;
 }
 
+// Update only the values of the position of the motors
 void display_semi_update(void)
 {
 	char text[17];
@@ -472,6 +475,7 @@ void display_semi_update(void)
 	}
 }
 
+// Handle the display
 void display_handler(void)
 {
 	static system_status_type backup;
@@ -507,21 +511,21 @@ void display_handler(void)
 				sprintf(text, "  INT: %04.2f mW  ", power);
 				disp_line1(text);
 			}
-
 		}
 		backup = status;
 		backup.screen_flag = 0;
 		status.pretime = esp_log_timestamp();
 	}
-
 }
+
 /* MAIN APP */
 
 void app_main(void)
 {
 	gpio_pad_select_gpio(laser_en);
-	gpio_set_direction(laser_en, GPIO_MODE_OUTPUT);
 	gpio_set_level(laser_en, 0);
+	gpio_set_direction(laser_en, GPIO_MODE_OUTPUT);
+
 
     //Initialize NVS
     esp_err_t ret = nvs_flash_init();
@@ -554,12 +558,8 @@ void app_main(void)
     	esp_restart();
     }
 
-
-
     // Initialize keyboard
     keyboard_gpio_initilize();
-
-
 
 	int key;
 	int key_hand;
