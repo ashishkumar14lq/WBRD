@@ -8,6 +8,8 @@
 #ifndef MAIN_MOTORS_H_
 #define MAIN_MOTORS_H_
 
+#define us_between_steps	1000
+
 #define m_direction		14		//1 - Clockwise / 0-Anticlockwise
 #define motor1_step		25
 #define motor2_step		2
@@ -37,9 +39,9 @@
 void sample_step(int nsteps)
 {
 	for(int i=0;i<nsteps;i++){
-		ets_delay_us(1000);
+		ets_delay_us(us_between_steps);
 		gpio_set_level(sample_step_pin, 1);
-		ets_delay_us(1000);
+		ets_delay_us(us_between_steps);
 		gpio_set_level(sample_step_pin, 0);
 	}
 }
@@ -47,9 +49,9 @@ void sample_step(int nsteps)
 void detector_step(int nsteps)
 {
 	for (int i=0;i<nsteps;i++){
-		ets_delay_us(1000);
+		ets_delay_us(us_between_steps);
 		gpio_set_level(detector_step_pin, 1);
-		ets_delay_us(1000);
+		ets_delay_us(us_between_steps);
 		gpio_set_level(detector_step_pin, 0);
 	}
 }
@@ -126,7 +128,7 @@ esp_err_t m_initialize(void)
 	}
 
 	ESP_LOGI(TAG,"allocate in center");
-	gpio_set_direction(m_direction, 1);	//Anticlockwise
+	gpio_set_level(m_direction, 1);	//clockwise
 	uint32_t neg_steps = steps/2;
 	detector_step(neg_steps);
 

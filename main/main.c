@@ -150,9 +150,9 @@ int http_update(int param, char* value){
 				{
 					printf("Move anti-clockwise \n");
 					nsteps = abs(nsteps);
-					gpio_set_level(m_direction, 0); // Anti-clockwise
+					gpio_set_level(m_direction, 0);	//Anticlockwise
 
-					ets_delay_us(1000000);
+					ets_delay_us(1);
 					printf("Mode detector %d steps \n", nsteps);
 					detector_step(nsteps);
 					printf("Mode sample %d steps \n", 2*nsteps);
