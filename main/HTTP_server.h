@@ -18,18 +18,22 @@ static const char *TAGWS = "HTTP_server";
 
 static esp_err_t get_get_handler(httpd_req_t *req)
 {
-    char resp_str[20];
+    char resp_str[50];
+    char temp[20];
     int value = get_read();
     float power;
 
     if (status.gain == _50uw)
     	{
 			power = (float)value / 4095 * 50;
-			sprintf(resp_str, "  INT: %05.1f uW  ", power);
+			sprintf(resp_str, "  INT: %05.1f uW<br/>", power);
 		} else {
 			power = (float)value / 4095 * 5;
-			sprintf(resp_str, "INT: %05.2f mW", power);
+			sprintf(resp_str, "INT: %05.2f mW<br/>", power);
 		}
+
+    sprintf(temp, "ANG: %4.1f Deg", status.angle);
+    strcat(resp_str, temp);
 
     httpd_resp_send(req, resp_str, strlen(resp_str));
 
@@ -116,6 +120,15 @@ static esp_err_t set_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+static esp_err_t get_range_handler(httpd_req_t *req)
+{
+	char resp_str[30];
+	float range_neg = status.nstep_neg / steps_per_degree;
+	float range_pos = status.nstep_neg / steps_per_degree;
+	sprintf(resp_str, "Angle range: %4.1f / %4.1f", range_neg, range_pos);
+	httpd_resp_send(req, resp_str, strlen(resp_str));
+	return ESP_OK;
+}
 
 static const httpd_uri_t set = {
     .uri       = "/set",
@@ -127,9 +140,12 @@ static const httpd_uri_t get = {
     .uri       = "/get",
     .method    = HTTP_GET,
     .handler   = get_get_handler,
-    /* Let's pass response string in user
-     * context to demonstrate it's usage */
-    .user_ctx  = "Hello World!"
+};
+
+static const httpd_uri_t get_range = {
+    .uri       = "/getrange",
+    .method    = HTTP_GET,
+    .handler   = get_range_handler,
 };
 
 
@@ -147,6 +163,7 @@ static httpd_handle_t start_webserver(void)
         ESP_LOGI(TAGWS, "Registering URI handlers");
         httpd_register_uri_handler(server, &set);
         httpd_register_uri_handler(server, &get);
+        httpd_register_uri_handler(server, &get_range);
         return server;
     }
 

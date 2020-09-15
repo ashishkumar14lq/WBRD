@@ -120,7 +120,7 @@ int http_update(int param, char* value){
 		printf("\n\n");
 		float angle = strtof(value, NULL);				// Get angle from string
 		printf("angle: \n");
-		float new_step_dec = (angle * 17.77777778);		// Calculate final steps position
+		float new_step_dec = (angle * steps_per_degree);		// Calculate final steps position
 
 
 
@@ -268,7 +268,6 @@ void wifi_connect(void){
 
 void neg_step(void)
 {
-	const float steps_per_degree = 17.7777777778;
 
 	float new_angle =  status.angle - status.step_size;
 	float new_step_dec = new_angle * steps_per_degree;

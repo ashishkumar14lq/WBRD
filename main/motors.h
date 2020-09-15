@@ -9,6 +9,7 @@
 #define MAIN_MOTORS_H_
 
 #define us_between_steps	1000
+const float steps_per_degree = 17.7777777778;
 
 #define m_direction		14		//1 - Clockwise / 0-Anticlockwise
 #define motor1_step		25
@@ -135,7 +136,7 @@ esp_err_t m_initialize(void)
 	status.nstep_neg = neg_steps;
 	status.nstep_pos = steps - neg_steps;
 
-	float max_angle = status.nstep_pos * 17.777777778;
+	float max_angle = status.nstep_pos / steps_per_degree;
 	printf("nsteps: %d, pos_steps: %d, neg_steps: %d, max_angle: %f \n", steps, status.nstep_pos, status.nstep_neg, max_angle);
 
 	return ESP_OK;
